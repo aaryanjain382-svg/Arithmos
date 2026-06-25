@@ -1,0 +1,1194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calcify — a desk of calculators</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --desk:#DCD8CE; --desk-edge:#CDC8BC;
+    --case:#F8F7F3; --case-2:#F1EFE9;
+    --key:#FFFFFF; --key-edge:#E4E0D6; --key-text:#23252B;
+    --line:#E7E3DA;
+    --ink:#21232A; --ink-soft:#73767F; --ink-faint:#9A9CA3;
+    --readout:#15171C; --readout-2:#0B0D11;
+    --phosphor:#FFB454; --phosphor-soft:rgba(255,180,84,.55); --phosphor-dim:rgba(255,180,84,.20);
+    --accent:#0F8478; --accent-2:#0B6359; --accent-soft:rgba(15,132,120,.12);
+    --danger:#DD6147; --danger-2:#C44E36; --danger-soft:rgba(221,97,71,.12);
+    --r-lg:22px; --r-md:14px; --r-sm:10px;
+    --shadow-device:0 1px 0 rgba(255,255,255,.7) inset, 0 28px 60px -28px rgba(40,36,28,.55), 0 6px 18px -8px rgba(40,36,28,.30);
+    --font-display:"Bricolage Grotesque", system-ui, sans-serif;
+    --font-ui:"Hanken Grotesk", system-ui, sans-serif;
+    --font-mono:"JetBrains Mono", ui-monospace, monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  /* The hidden attribute must beat display-setting classes (.row/.field/.panel).
+     Author display rules otherwise override the UA [hidden] rule. */
+  [hidden]{ display:none !important; }
+  body{
+    font-family:var(--font-ui);
+    color:var(--ink);
+    background:
+      radial-gradient(120% 80% at 50% -10%, #E7E3D9 0%, var(--desk) 45%, var(--desk-edge) 100%);
+    min-height:100dvh;
+    display:flex; flex-direction:column; align-items:center;
+    padding:clamp(14px,3vw,40px);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .app{
+    width:100%; max-width:1000px;
+    background:linear-gradient(180deg,var(--case) 0%, var(--case-2) 100%);
+    border:1px solid #EDE9DF;
+    border-radius:var(--r-lg);
+    box-shadow:var(--shadow-device);
+    overflow:hidden;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:18px clamp(18px,3vw,28px);
+    border-bottom:1px solid var(--line);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,0)),
+      var(--case);
+  }
+  .brand{ display:flex; align-items:center; gap:13px; }
+  .mark{
+    width:42px; height:42px; border-radius:12px; flex:none;
+    background:linear-gradient(160deg,var(--readout),var(--readout-2));
+    display:grid; place-items:center;
+    box-shadow:0 2px 0 rgba(255,255,255,.5) inset, 0 8px 18px -8px rgba(0,0,0,.55);
+    position:relative;
+  }
+  .mark svg{ display:block; }
+  .brand h1{
+    font-family:var(--font-display); font-weight:800;
+    font-size:clamp(22px,3.4vw,28px); letter-spacing:-.02em; margin:0; line-height:1;
+  }
+  .brand .tag{ font-size:11px; color:var(--ink-soft); letter-spacing:.14em; text-transform:uppercase; margin-top:3px; }
+
+  .credit{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12px; color:#F2C98A;
+    background:linear-gradient(180deg,#1c1e24,#101217);
+    border:1px solid #2a2d35;
+    padding:7px 13px; border-radius:999px;
+    box-shadow:0 1px 0 rgba(255,255,255,.06) inset;
+    white-space:nowrap;
+  }
+  .credit .dot{ width:7px; height:7px; border-radius:50%; background:var(--phosphor);
+    box-shadow:0 0 8px var(--phosphor); flex:none; }
+  .credit b{ color:#fff; font-weight:600; }
+
+  /* ---------- body: modes + stage ---------- */
+  .body{ display:grid; grid-template-columns:208px 1fr; gap:0; }
+
+  .modes{
+    border-right:1px solid var(--line);
+    padding:16px; display:flex; flex-direction:column; gap:6px;
+    background:linear-gradient(180deg, rgba(0,0,0,.012), rgba(0,0,0,0));
+  }
+  .modes .modes-label{
+    font-size:10.5px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink-faint); padding:4px 10px 8px;
+  }
+  .mode{
+    appearance:none; border:1px solid transparent; background:transparent;
+    text-align:left; cursor:pointer; font-family:var(--font-ui);
+    color:var(--ink-soft); font-size:14.5px; font-weight:600;
+    padding:11px 13px; border-radius:var(--r-sm);
+    display:flex; align-items:center; gap:11px; line-height:1;
+    transition:background .15s, color .15s, border-color .15s, transform .05s;
+  }
+  .mode .ic{ width:18px; height:18px; flex:none; color:var(--ink-faint); transition:color .15s; }
+  .mode:hover{ background:#fff; color:var(--ink); }
+  .mode:hover .ic{ color:var(--accent); }
+  .mode[aria-selected="true"]{
+    background:#fff; color:var(--ink); border-color:#ECE8DE;
+    box-shadow:0 1px 0 #fff inset, 0 6px 14px -10px rgba(40,36,28,.4);
+  }
+  .mode[aria-selected="true"] .ic{ color:var(--accent); }
+  .mode[aria-selected="true"]::after{
+    content:""; margin-left:auto; width:6px; height:6px; border-radius:50%;
+    background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);
+  }
+
+  .stage{ padding:clamp(18px,2.6vw,26px); min-width:0; }
+
+  .panel[hidden]{ display:none; }
+  .panel{ animation:fade .25s ease; }
+  @keyframes fade{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:none; } }
+
+  /* ---------- the screen (signature element) ---------- */
+  .screen{
+    position:relative; border-radius:16px; overflow:hidden;
+    background:
+      radial-gradient(140% 120% at 50% 0%, #1b1e25 0%, var(--readout) 55%, var(--readout-2) 100%);
+    border:1px solid #04060a;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.05) inset,
+      0 0 0 7px var(--case-2),
+      0 0 0 8px var(--line),
+      0 18px 40px -22px rgba(0,0,0,.6) inset;
+    padding:18px 20px 20px;
+    margin-bottom:22px;
+    min-height:138px;
+    display:flex; flex-direction:column;
+  }
+  .screen::after{ /* scanlines */
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.0) 0 2px, rgba(0,0,0,.10) 2px 3px);
+    mix-blend-mode:overlay; opacity:.5;
+  }
+  .screen-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; }
+  .screen-tag{
+    font-family:var(--font-mono); font-size:10.5px; letter-spacing:.22em;
+    color:var(--phosphor-soft); text-transform:uppercase;
+  }
+  .screen-mode-extra{ font-family:var(--font-mono); font-size:11px; color:var(--phosphor-dim); letter-spacing:.1em; }
+  .screen-sub{
+    font-family:var(--font-mono); font-size:14px; color:var(--phosphor-dim);
+    min-height:18px; word-break:break-all; line-height:1.3;
+  }
+  .screen-main{
+    font-family:var(--font-mono); font-weight:500; color:var(--phosphor);
+    font-size:clamp(30px,6.6vw,46px); line-height:1.05; letter-spacing:-.01em;
+    margin-top:auto; word-break:break-all;
+    text-shadow:0 0 14px rgba(255,180,84,.35);
+    font-variant-numeric:tabular-nums;
+  }
+  .screen-main .unit{ font-size:.5em; color:var(--phosphor-soft); margin-left:.35em; letter-spacing:0; }
+  .screen-extra{
+    margin-top:14px; padding-top:13px; border-top:1px dashed rgba(255,180,84,.18);
+    font-family:var(--font-mono); color:var(--phosphor-soft); font-size:12px;
+  }
+  .screen-extra[hidden]{ display:none; }
+  .mini-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:10px 16px; }
+  .mini-grid .k{ color:var(--phosphor-dim); font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+  .mini-grid .v{ color:var(--phosphor); font-size:14px; margin-top:2px; }
+
+  /* split bar (EMI / BMI gauge) */
+  .bar{ height:9px; border-radius:999px; overflow:hidden; display:flex; margin-top:12px; background:rgba(255,255,255,.06); }
+  .bar .seg-p{ background:var(--phosphor); }
+  .bar .seg-i{ background:rgba(255,180,84,.32); }
+  .bar-legend{ display:flex; gap:16px; margin-top:8px; font-size:11px; }
+  .bar-legend span{ display:inline-flex; align-items:center; gap:6px; color:var(--phosphor-soft); }
+  .bar-legend i{ width:9px; height:9px; border-radius:3px; display:inline-block; }
+
+  .gauge{ margin-top:10px; }
+  .gauge-track{ position:relative; height:10px; border-radius:999px; display:flex; overflow:hidden; }
+  .gauge-track .z{ flex:1; }
+  .z.under{ background:rgba(120,180,255,.55); }
+  .z.normal{ background:rgba(108,210,140,.65); }
+  .z.over{ background:rgba(255,196,86,.7); }
+  .z.obese{ background:rgba(232,108,92,.7); }
+  .gauge-needle{ position:absolute; top:-4px; width:3px; height:18px; background:#fff;
+    border-radius:2px; box-shadow:0 0 8px rgba(255,255,255,.8); transform:translateX(-50%); transition:left .25s ease; }
+  .gauge-scale{ display:flex; justify-content:space-between; font-size:10px; color:var(--phosphor-dim); margin-top:6px; }
+
+  /* ---------- keypad ---------- */
+  .keys{ display:grid; gap:10px; }
+  .keys.basic{ grid-template-columns:repeat(4,1fr); }
+  .keys.sci{ grid-template-columns:repeat(5,1fr); }
+
+  .key{
+    appearance:none; cursor:pointer; font-family:var(--font-ui);
+    border:1px solid var(--key-edge);
+    background:linear-gradient(180deg,#fff 0%, #FBFAF7 100%);
+    color:var(--key-text); font-size:clamp(15px,2.1vw,19px); font-weight:600;
+    padding:0; height:clamp(50px,7.4vw,62px); border-radius:var(--r-md);
+    box-shadow:0 2px 0 var(--key-edge), 0 6px 12px -8px rgba(40,36,28,.4);
+    transition:transform .04s ease, box-shadow .04s ease, background .12s;
+    display:grid; place-items:center; line-height:1;
+  }
+  .keys.sci .key{ height:clamp(44px,6.2vw,54px); font-size:clamp(13px,1.7vw,16px); }
+  .key:hover{ background:linear-gradient(180deg,#fff,#fff); }
+  .key:active{ transform:translateY(2px); box-shadow:0 0 0 var(--key-edge), 0 3px 8px -6px rgba(40,36,28,.4); }
+  .key:focus-visible{ outline:3px solid var(--accent-soft); outline-offset:2px; border-color:var(--accent); }
+
+  .key.op{ color:var(--accent-2); border-color:#CFE6E2;
+    background:linear-gradient(180deg,#F4FBFA,#E9F6F4); box-shadow:0 2px 0 #CFE6E2, 0 6px 12px -8px rgba(15,132,120,.35); }
+  .key.op:active{ box-shadow:0 0 0 #CFE6E2, 0 3px 8px -6px rgba(15,132,120,.35); }
+  .key.fn{ color:var(--ink-soft); background:linear-gradient(180deg,#FAF9F6,#F3F1EB);
+    border-color:#E7E3D9; box-shadow:0 2px 0 #E7E3D9, 0 6px 12px -9px rgba(40,36,28,.35); font-size:clamp(12px,1.5vw,14px); }
+  .key.fn:active{ box-shadow:0 0 0 #E7E3D9, 0 3px 8px -6px rgba(40,36,28,.35); }
+  .key.danger{ color:#fff; background:linear-gradient(180deg,var(--danger),var(--danger-2)); border-color:var(--danger-2);
+    box-shadow:0 2px 0 var(--danger-2), 0 8px 16px -8px rgba(221,97,71,.6); }
+  .key.danger:active{ box-shadow:0 0 0 var(--danger-2), 0 3px 8px -6px rgba(221,97,71,.6); }
+  .key.accent{ color:#fff; background:linear-gradient(180deg,var(--accent),var(--accent-2)); border-color:var(--accent-2);
+    box-shadow:0 2px 0 var(--accent-2), 0 8px 16px -8px rgba(15,132,120,.6); }
+  .key.accent:active{ box-shadow:0 0 0 var(--accent-2), 0 3px 8px -6px rgba(15,132,120,.6); }
+  .key.toggle{ font-family:var(--font-mono); font-size:12px; letter-spacing:.04em; color:var(--accent-2);
+    background:linear-gradient(180deg,#F4FBFA,#E9F6F4); border-color:#CFE6E2; }
+  .key small{ font-size:.62em; color:var(--ink-faint); margin-top:2px; }
+
+  /* ---------- forms (EMI/BMI/Metric/Age/Speed) ---------- */
+  .form{ display:grid; gap:16px; }
+  .row{ display:grid; gap:14px; grid-template-columns:1fr 1fr; }
+  .row.three{ grid-template-columns:1fr 1fr 1fr; }
+  .field{ display:flex; flex-direction:column; gap:7px; min-width:0; }
+  .field > label{ font-size:12.5px; font-weight:600; color:var(--ink-soft); letter-spacing:.01em; }
+  .control{ display:flex; align-items:stretch; gap:8px; }
+  input[type="number"], input[type="date"], select{
+    width:100%; font-family:var(--font-ui); font-size:16px; color:var(--ink);
+    background:#fff; border:1px solid var(--key-edge); border-radius:var(--r-sm);
+    padding:12px 13px; min-width:0;
+    box-shadow:0 1px 2px rgba(40,36,28,.04) inset;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  select{ cursor:pointer; appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%2373767F' stroke-width='1.6' stroke-linecap='round'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center; padding-right:32px; }
+  .control select.suffix{ width:auto; flex:none; min-width:96px; }
+  .swap{
+    flex:none; width:46px; border:1px solid var(--key-edge); border-radius:var(--r-sm); background:#fff;
+    cursor:pointer; color:var(--accent-2); display:grid; place-items:center;
+    box-shadow:0 1px 2px rgba(40,36,28,.06); transition:transform .15s, background .12s;
+  }
+  .swap:hover{ background:var(--accent-soft); }
+  .swap:active{ transform:rotate(180deg); }
+  .swap:focus-visible{ outline:3px solid var(--accent-soft); outline-offset:2px; }
+
+  /* segmented toggle */
+  .seg{ display:inline-flex; padding:4px; gap:4px; background:var(--case-2); border:1px solid var(--line);
+    border-radius:999px; }
+  .seg button{ appearance:none; border:none; background:transparent; cursor:pointer; font-family:var(--font-ui);
+    font-size:13px; font-weight:600; color:var(--ink-soft); padding:8px 16px; border-radius:999px; transition:.15s; }
+  .seg button[aria-pressed="true"]{ background:#fff; color:var(--ink);
+    box-shadow:0 1px 0 #fff inset, 0 4px 10px -8px rgba(40,36,28,.5); }
+  .seg button:focus-visible{ outline:3px solid var(--accent-soft); outline-offset:2px; }
+
+  .seg-wrap{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .seg-wrap .seg-label{ font-size:12.5px; font-weight:600; color:var(--ink-soft); }
+
+  .hint{ font-size:12px; color:var(--ink-faint); }
+  .err{ color:var(--danger-2); font-size:12.5px; font-weight:600; min-height:0; }
+  .err:empty{ display:none; }
+
+  .ghost-btn{ appearance:none; border:1px dashed var(--key-edge); background:transparent; cursor:pointer;
+    font-family:var(--font-ui); font-size:12.5px; font-weight:600; color:var(--ink-soft);
+    padding:9px 13px; border-radius:var(--r-sm); transition:.15s; }
+  .ghost-btn:hover{ border-color:var(--accent); color:var(--accent-2); background:var(--accent-soft); }
+  .ghost-btn:focus-visible{ outline:3px solid var(--accent-soft); outline-offset:2px; }
+
+  .footer{ text-align:center; color:var(--ink-faint); font-size:12px; padding:14px; }
+  .footer b{ color:var(--ink-soft); font-weight:600; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:820px){
+    .body{ grid-template-columns:1fr; }
+    .modes{
+      border-right:none; border-bottom:1px solid var(--line);
+      flex-direction:row; overflow-x:auto; gap:8px; padding:12px 14px;
+      scrollbar-width:none;
+    }
+    .modes::-webkit-scrollbar{ display:none; }
+    .modes .modes-label{ display:none; }
+    .mode{ flex:none; white-space:nowrap; padding:9px 13px; }
+    .mode[aria-selected="true"]::after{ display:none; }
+    .row, .row.three{ grid-template-columns:1fr; }
+  }
+  @media (max-width:420px){
+    .credit{ display:none; }
+    .topbar{ padding:14px 16px; }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+  <main class="app" id="app">
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="3" width="18" height="18" rx="5" stroke="#FFB454" stroke-width="1.6"/>
+            <line x1="7.5" y1="9" x2="16.5" y2="9" stroke="#FFB454" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="7.5" y1="13" x2="13.5" y2="13" stroke="#0F8478" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="7.5" y1="16.5" x2="11.5" y2="16.5" stroke="#0F8478" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <div>
+          <h1>Calcify</h1>
+          <div class="tag">A desk of calculators</div>
+        </div>
+      </div>
+      <span class="credit"><span class="dot"></span>Developed by <b>Codeus AIDev</b></span>
+    </header>
+
+    <div class="body">
+      <!-- MODE RAIL -->
+      <nav class="modes" role="tablist" aria-label="Calculators" id="modes">
+        <div class="modes-label">Tools</div>
+        <!-- mode buttons injected here -->
+      </nav>
+
+      <!-- STAGE -->
+      <div class="stage">
+
+        <!-- ============ BASIC ============ -->
+        <section class="panel" id="panel-basic" role="tabpanel" aria-label="Arithmetic calculator">
+          <div class="screen">
+            <div class="screen-head"><span class="screen-tag">Arithmetic</span></div>
+            <div class="screen-sub" id="basic-sub"></div>
+            <div class="screen-main" id="basic-main" aria-live="polite">0</div>
+          </div>
+          <div class="keys basic" id="basic-keys"></div>
+        </section>
+
+        <!-- ============ SCIENTIFIC ============ -->
+        <section class="panel" id="panel-sci" role="tabpanel" aria-label="Scientific calculator" hidden>
+          <div class="screen">
+            <div class="screen-head">
+              <span class="screen-tag">Scientific</span>
+              <span class="screen-mode-extra" id="sci-angle">DEG</span>
+            </div>
+            <div class="screen-sub" id="sci-sub"></div>
+            <div class="screen-main" id="sci-main" aria-live="polite">0</div>
+          </div>
+          <div class="keys sci" id="sci-keys"></div>
+        </section>
+
+        <!-- ============ EMI ============ -->
+        <section class="panel" id="panel-emi" role="tabpanel" aria-label="Loan EMI calculator" hidden>
+          <div class="screen">
+            <div class="screen-head"><span class="screen-tag">Loan EMI</span><span class="screen-mode-extra" id="emi-term"></span></div>
+            <div class="screen-sub">Monthly payment</div>
+            <div class="screen-main" id="emi-main" aria-live="polite">—</div>
+            <div class="screen-extra" id="emi-extra" hidden>
+              <div class="mini-grid">
+                <div><div class="k">Principal</div><div class="v" id="emi-principal">—</div></div>
+                <div><div class="k">Total interest</div><div class="v" id="emi-interest">—</div></div>
+                <div><div class="k">Total payable</div><div class="v" id="emi-total">—</div></div>
+              </div>
+              <div class="bar"><div class="seg-p" id="emi-bar-p"></div><div class="seg-i" id="emi-bar-i"></div></div>
+              <div class="bar-legend">
+                <span><i style="background:var(--phosphor)"></i>Principal</span>
+                <span><i style="background:rgba(255,180,84,.32)"></i>Interest</span>
+              </div>
+            </div>
+          </div>
+          <div class="form">
+            <div class="row">
+              <div class="field">
+                <label for="emi-amount">Loan amount</label>
+                <div class="control">
+                  <select class="suffix" id="emi-cur" aria-label="Currency">
+                    <option value="₹">₹ INR</option><option value="$">$ USD</option>
+                    <option value="€">€ EUR</option><option value="£">£ GBP</option>
+                  </select>
+                  <input type="number" id="emi-amount" min="0" step="1000" placeholder="500000" value="500000" inputmode="decimal" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="emi-rate">Interest rate (% per year)</label>
+                <input type="number" id="emi-rate" min="0" step="0.05" placeholder="9" value="9" inputmode="decimal" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="emi-tenure">Tenure</label>
+                <div class="control">
+                  <input type="number" id="emi-tenure" min="1" step="1" placeholder="5" value="5" inputmode="numeric" />
+                  <select class="suffix" id="emi-tenure-unit" aria-label="Tenure unit">
+                    <option value="years">Years</option><option value="months">Months</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field" style="justify-content:flex-end">
+                <div class="hint">Payment is fixed across the term at the rate you enter.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ COMPOUND INTEREST ============ -->
+        <section class="panel" id="panel-ci" role="tabpanel" aria-label="Compound interest calculator" hidden>
+          <div class="screen">
+            <div class="screen-head"><span class="screen-tag">Compound interest</span><span class="screen-mode-extra" id="ci-freq-tag"></span></div>
+            <div class="screen-sub">Maturity amount</div>
+            <div class="screen-main" id="ci-main" aria-live="polite">—</div>
+            <div class="screen-extra" id="ci-extra" hidden>
+              <div class="mini-grid">
+                <div><div class="k">Invested</div><div class="v" id="ci-invested">—</div></div>
+                <div><div class="k">Interest earned</div><div class="v" id="ci-interest">—</div></div>
+                <div><div class="k">Maturity</div><div class="v" id="ci-maturity">—</div></div>
+              </div>
+              <div class="bar"><div class="seg-p" id="ci-bar-p"></div><div class="seg-i" id="ci-bar-i"></div></div>
+              <div class="bar-legend">
+                <span><i style="background:var(--phosphor)"></i>Invested</span>
+                <span><i style="background:rgba(255,180,84,.32)"></i>Interest</span>
+              </div>
+            </div>
+          </div>
+          <div class="form">
+            <div class="row">
+              <div class="field">
+                <label for="ci-principal">Principal</label>
+                <div class="control">
+                  <select class="suffix" id="ci-cur" aria-label="Currency">
+                    <option value="₹">₹ INR</option><option value="$">$ USD</option>
+                    <option value="€">€ EUR</option><option value="£">£ GBP</option>
+                  </select>
+                  <input type="number" id="ci-principal" min="0" step="1000" placeholder="100000" value="100000" inputmode="decimal" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="ci-rate">Interest rate (% per year)</label>
+                <input type="number" id="ci-rate" min="0" step="0.05" placeholder="8" value="8" inputmode="decimal" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="ci-years">Time (years)</label>
+                <input type="number" id="ci-years" min="0" step="0.5" placeholder="10" value="10" inputmode="decimal" />
+              </div>
+              <div class="field">
+                <label for="ci-freq">Compounding</label>
+                <select id="ci-freq">
+                  <option value="1">Annually</option>
+                  <option value="2">Semi-annually</option>
+                  <option value="4">Quarterly</option>
+                  <option value="12" selected>Monthly</option>
+                  <option value="365">Daily</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="ci-contrib">Regular contribution (optional)</label>
+                <input type="number" id="ci-contrib" min="0" step="100" placeholder="0" value="0" inputmode="decimal" />
+                <div class="hint" id="ci-contrib-hint">Added each compounding period.</div>
+              </div>
+              <div class="field" style="justify-content:flex-end">
+                <div class="hint">Interest compounds on the balance — so past earnings earn too.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ BMI ============ -->
+        <section class="panel" id="panel-bmi" role="tabpanel" aria-label="BMI calculator" hidden>
+          <div class="screen">
+            <div class="screen-head"><span class="screen-tag">Body mass index</span><span class="screen-mode-extra" id="bmi-cat-tag"></span></div>
+            <div class="screen-sub">Your BMI</div>
+            <div class="screen-main" id="bmi-main" aria-live="polite">—</div>
+            <div class="screen-extra" id="bmi-extra" hidden>
+              <div class="gauge">
+                <div class="gauge-track">
+                  <span class="z under"></span><span class="z normal"></span><span class="z over"></span><span class="z obese"></span>
+                  <span class="gauge-needle" id="bmi-needle" style="left:0%"></span>
+                </div>
+                <div class="gauge-scale"><span>15</span><span>18.5</span><span>25</span><span>30</span><span>40</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="form">
+            <div class="seg-wrap">
+              <span class="seg-label">Units</span>
+              <div class="seg" id="bmi-units" role="group" aria-label="BMI units">
+                <button type="button" data-unit="metric" aria-pressed="true">Metric</button>
+                <button type="button" data-unit="imperial" aria-pressed="false">Imperial</button>
+              </div>
+            </div>
+            <div id="bmi-metric-fields" class="row">
+              <div class="field">
+                <label for="bmi-kg">Weight (kg)</label>
+                <input type="number" id="bmi-kg" min="0" step="0.1" placeholder="70" value="70" inputmode="decimal" />
+              </div>
+              <div class="field">
+                <label for="bmi-cm">Height (cm)</label>
+                <input type="number" id="bmi-cm" min="0" step="0.1" placeholder="175" value="175" inputmode="decimal" />
+              </div>
+            </div>
+            <div id="bmi-imperial-fields" class="row three" hidden>
+              <div class="field">
+                <label for="bmi-lb">Weight (lb)</label>
+                <input type="number" id="bmi-lb" min="0" step="0.1" placeholder="154" value="154" inputmode="decimal" />
+              </div>
+              <div class="field">
+                <label for="bmi-ft">Height (ft)</label>
+                <input type="number" id="bmi-ft" min="0" step="1" placeholder="5" value="5" inputmode="numeric" />
+              </div>
+              <div class="field">
+                <label for="bmi-in">(in)</label>
+                <input type="number" id="bmi-in" min="0" step="1" placeholder="9" value="9" inputmode="numeric" />
+              </div>
+            </div>
+            <div class="hint">Categories follow WHO ranges: under 18.5, 18.5–24.9, 25–29.9, 30+.</div>
+          </div>
+        </section>
+
+        <!-- ============ METRIC / CONVERT ============ -->
+        <section class="panel" id="panel-metric" role="tabpanel" aria-label="Unit converter" hidden>
+          <div class="screen">
+            <div class="screen-head"><span class="screen-tag">Unit converter</span><span class="screen-mode-extra" id="conv-cat-tag"></span></div>
+            <div class="screen-sub" id="conv-sub">—</div>
+            <div class="screen-main" id="conv-main" aria-live="polite">—</div>
+          </div>
+          <div class="form">
+            <div class="field">
+              <label for="conv-cat">Category</label>
+              <select id="conv-cat">
+                <option value="length">Length</option><option value="mass">Mass / weight</option>
+                <option value="temp">Temperature</option><option value="volume">Volume</option>
+                <option value="area">Area</option><option value="data">Data</option><option value="time">Time</option>
+              </select>
+            </div>
+            <div class="row" style="grid-template-columns:1fr auto 1fr; align-items:end;">
+              <div class="field">
+                <label for="conv-value">From</label>
+                <div class="control">
+                  <input type="number" id="conv-value" step="any" placeholder="1" value="1" inputmode="decimal" />
+                  <select class="suffix" id="conv-from" aria-label="From unit"></select>
+                </div>
+              </div>
+              <button class="swap" id="conv-swap" type="button" title="Swap units" aria-label="Swap units" style="margin-bottom:1px">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 4l-3 3 3 3M4 7h13M17 20l3-3-3-3M20 17H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="field">
+                <label for="conv-to">To</label>
+                <select id="conv-to" aria-label="To unit"></select>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ AGE ============ -->
+        <section class="panel" id="panel-age" role="tabpanel" aria-label="Age calculator" hidden>
+          <div class="screen">
+            <div class="screen-head"><span class="screen-tag">Age</span><span class="screen-mode-extra" id="age-born"></span></div>
+            <div class="screen-sub">Exact age</div>
+            <div class="screen-main" id="age-main" aria-live="polite">—</div>
+            <div class="screen-extra" id="age-extra" hidden>
+              <div class="mini-grid">
+                <div><div class="k">Months</div><div class="v" id="age-months">—</div></div>
+                <div><div class="k">Weeks</div><div class="v" id="age-weeks">—</div></div>
+                <div><div class="k">Days</div><div class="v" id="age-days">—</div></div>
+                <div><div class="k">Hours</div><div class="v" id="age-hours">—</div></div>
+                <div><div class="k">Next birthday</div><div class="v" id="age-next">—</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="form">
+            <div class="row">
+              <div class="field">
+                <label for="age-dob">Date of birth</label>
+                <input type="date" id="age-dob" value="2000-01-01" />
+              </div>
+              <div class="field">
+                <label for="age-as">Age at date</label>
+                <input type="date" id="age-as" />
+              </div>
+            </div>
+            <div><button class="ghost-btn" id="age-today" type="button">Reset “age at” to today</button></div>
+            <div class="err" id="age-err"></div>
+          </div>
+        </section>
+
+        <!-- ============ SPEED ============ -->
+        <section class="panel" id="panel-speed" role="tabpanel" aria-label="Speed, distance and time calculator" hidden>
+          <div class="screen">
+            <div class="screen-head"><span class="screen-tag">Speed · distance · time</span><span class="screen-mode-extra" id="speed-solving"></span></div>
+            <div class="screen-sub" id="speed-sub">—</div>
+            <div class="screen-main" id="speed-main" aria-live="polite">—</div>
+          </div>
+          <div class="form">
+            <div class="seg-wrap">
+              <span class="seg-label">Solve for</span>
+              <div class="seg" id="speed-mode" role="group" aria-label="Solve for">
+                <button type="button" data-solve="speed" aria-pressed="true">Speed</button>
+                <button type="button" data-solve="distance" aria-pressed="false">Distance</button>
+                <button type="button" data-solve="time" aria-pressed="false">Time</button>
+              </div>
+            </div>
+
+            <!-- distance field -->
+            <div class="field" id="sp-field-dist">
+              <label for="sp-dist">Distance</label>
+              <div class="control">
+                <input type="number" id="sp-dist" step="any" min="0" placeholder="100" value="100" inputmode="decimal" />
+                <select class="suffix" id="sp-dist-u" aria-label="Distance unit"></select>
+              </div>
+            </div>
+            <!-- time field -->
+            <div class="field" id="sp-field-time">
+              <label for="sp-time">Time</label>
+              <div class="control">
+                <input type="number" id="sp-time" step="any" min="0" placeholder="2" value="2" inputmode="decimal" />
+                <select class="suffix" id="sp-time-u" aria-label="Time unit"></select>
+              </div>
+            </div>
+            <!-- speed field -->
+            <div class="field" id="sp-field-speed" hidden>
+              <label for="sp-speed">Speed</label>
+              <div class="control">
+                <input type="number" id="sp-speed" step="any" min="0" placeholder="60" value="60" inputmode="decimal" />
+                <select class="suffix" id="sp-speed-u" aria-label="Speed unit"></select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="sp-out">Show result in</label>
+              <select id="sp-out" aria-label="Result unit"></select>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /stage -->
+    </div><!-- /body -->
+
+    <div class="footer">Calcify — seven tools, one desk. <b>Developed by Codeus AIDev</b>.</div>
+  </main>
+
+<script>
+/* =========================================================
+   CALCIFY  ·  logic (parser, finance, conversions) + UI
+   ========================================================= */
+(function(){
+"use strict";
+
+/* ---------- formatting ---------- */
+function fmt(n){
+  if(typeof n!=="number"||Number.isNaN(n)) return "Error";
+  if(!isFinite(n)) return n>0?"∞":"-∞";
+  if(n!==0 && (Math.abs(n)<1e-9 || Math.abs(n)>=1e15)) return n.toExponential(6).replace(/\.?0+e/,"e");
+  return n.toLocaleString("en-US",{maximumFractionDigits:10});
+}
+function fmtFixed(n,d){
+  if(typeof n!=="number"||!isFinite(n)) return "—";
+  return n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+function numToExpr(v){
+  if(!isFinite(v)) return "0";
+  if(Math.abs(v)>=1e15 || (v!==0 && Math.abs(v)<1e-9)) return v.toFixed(0);
+  return (Math.round(v*1e10)/1e10).toString();
+}
+
+/* ---------- expression evaluator (shunting-yard) ---------- */
+var FUNCS=new Set(["sin","cos","tan","asin","acos","atan","sqrt","ln","log","abs","exp"]);
+var CONSTS={pi:Math.PI,e:Math.E};
+function normalize(s){
+  return String(s).replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-")
+    .replace(/√/g,"sqrt").replace(/π/g,"pi").replace(/mod/g,"%");
+}
+function tokenize(str){
+  var t=[],i=0,prev=null;
+  function mul(){ if(prev==="val") t.push({t:"op",v:"*"}); }
+  while(i<str.length){
+    var c=str[i];
+    if(c===" "){ i++; continue; }
+    if((c>="0"&&c<="9")||c==="."){
+      var num=""; while(i<str.length&&((str[i]>="0"&&str[i]<="9")||str[i]===".")) num+=str[i++];
+      if((num.match(/\./g)||[]).length>1) throw new Error("bad number");
+      mul(); t.push({t:"num",v:parseFloat(num)}); prev="val"; continue;
+    }
+    if(/[a-zA-Z]/.test(c)){
+      var id=""; while(i<str.length&&/[a-zA-Z]/.test(str[i])) id+=str[i++];
+      if(FUNCS.has(id)){ mul(); t.push({t:"fn",v:id}); prev="op"; }
+      else if(id in CONSTS){ mul(); t.push({t:"num",v:CONSTS[id]}); prev="val"; }
+      else throw new Error("unknown token "+id);
+      continue;
+    }
+    if(c==="("){ mul(); t.push({t:"lp"}); prev="op"; i++; continue; }
+    if(c===")"){ t.push({t:"rp"}); prev="val"; i++; continue; }
+    if(c==="!"){ t.push({t:"fact"}); prev="val"; i++; continue; }
+    if("+-*/^%".indexOf(c)>=0){
+      if(c==="-"&&(prev===null||prev==="op")) t.push({t:"op",v:"u-"});
+      else if(c==="+"&&(prev===null||prev==="op")){ /* unary + */ }
+      else t.push({t:"op",v:c});
+      prev="op"; i++; continue;
+    }
+    throw new Error("unexpected "+c);
+  }
+  return t;
+}
+var PREC={"u-":5,"^":4,"*":3,"/":3,"%":3,"+":2,"-":2};
+var RIGHT=new Set(["^","u-"]);
+function toRPN(tokens){
+  var out=[],ops=[];
+  for(var k=0;k<tokens.length;k++){
+    var tok=tokens[k];
+    if(tok.t==="num"){ out.push(tok); }
+    else if(tok.t==="fn"){ ops.push(tok); }
+    else if(tok.t==="fact"){ out.push(tok); }
+    else if(tok.t==="op"){
+      while(ops.length){
+        var top=ops[ops.length-1];
+        if(top.t==="op" && (PREC[top.v]>PREC[tok.v] || (PREC[top.v]===PREC[tok.v] && !RIGHT.has(tok.v)))) out.push(ops.pop());
+        else break;
+      }
+      ops.push(tok);
+    }
+    else if(tok.t==="lp"){ ops.push(tok); }
+    else if(tok.t==="rp"){
+      while(ops.length && ops[ops.length-1].t!=="lp") out.push(ops.pop());
+      if(!ops.length) throw new Error("paren");
+      ops.pop();
+      if(ops.length && ops[ops.length-1].t==="fn") out.push(ops.pop());
+    }
+  }
+  while(ops.length){ var o=ops.pop(); if(o.t==="lp") throw new Error("paren"); out.push(o); }
+  return out;
+}
+function factorial(n){
+  if(n<0||!Number.isInteger(n)) throw new Error("factorial");
+  var r=1; for(var k=2;k<=n;k++) r*=k; return r;
+}
+function applyFn(name,x,deg){
+  var toR=function(v){return deg?v*Math.PI/180:v;}, fromR=function(v){return deg?v*180/Math.PI:v;};
+  switch(name){
+    case "sin": return Math.sin(toR(x));
+    case "cos": return Math.cos(toR(x));
+    case "tan": return Math.tan(toR(x));
+    case "asin": return fromR(Math.asin(x));
+    case "acos": return fromR(Math.acos(x));
+    case "atan": return fromR(Math.atan(x));
+    case "sqrt": return Math.sqrt(x);
+    case "ln": return Math.log(x);
+    case "log": return Math.log10(x);
+    case "abs": return Math.abs(x);
+    case "exp": return Math.exp(x);
+  }
+  throw new Error("fn");
+}
+function evalRPN(rpn,deg){
+  var st=[];
+  for(var k=0;k<rpn.length;k++){
+    var tok=rpn[k];
+    if(tok.t==="num"){ st.push(tok.v); }
+    else if(tok.t==="fact"){ st.push(factorial(st.pop())); }
+    else if(tok.t==="fn"){ st.push(applyFn(tok.v,st.pop(),deg)); }
+    else if(tok.t==="op"){
+      if(tok.v==="u-"){ st.push(-st.pop()); continue; }
+      var b=st.pop(),a=st.pop();
+      if(a===undefined||b===undefined) throw new Error("malformed");
+      if(tok.v==="+") st.push(a+b);
+      else if(tok.v==="-") st.push(a-b);
+      else if(tok.v==="*") st.push(a*b);
+      else if(tok.v==="/") st.push(a/b);
+      else if(tok.v==="^") st.push(Math.pow(a,b));
+      else if(tok.v==="%") st.push(a%b);
+    }
+  }
+  if(st.length!==1) throw new Error("malformed");
+  return st[0];
+}
+function evaluate(expr,deg){
+  var norm=normalize(expr);
+  if(!norm.trim()) return null;
+  return evalRPN(toRPN(tokenize(norm)),deg);
+}
+
+/* ---------- conversions / finance data ---------- */
+var UNITS={
+  length:{m:1,km:1000,cm:0.01,mm:0.001,mi:1609.344,yd:0.9144,ft:0.3048,"in":0.0254,nmi:1852},
+  mass:{kg:1,g:0.001,mg:1e-6,t:1000,lb:0.45359237,oz:0.028349523125,st:6.35029318},
+  volume:{l:1,ml:0.001,"m³":1000,"gal (US)":3.785411784,"gal (UK)":4.54609,qt:0.946352946,pt:0.473176473,cup:0.2365882365,"fl oz":0.0295735295625},
+  area:{"m²":1,"km²":1e6,"cm²":1e-4,ha:1e4,acre:4046.8564224,"mi²":2589988.110336,"ft²":0.09290304,"in²":0.00064516},
+  data:{B:1,KB:1e3,MB:1e6,GB:1e9,TB:1e12,KiB:1024,MiB:1048576,GiB:1073741824,bit:0.125},
+  time:{s:1,ms:0.001,min:60,h:3600,day:86400,week:604800,year:31557600}
+};
+var TEMP_UNITS=["°C","°F","K"];
+function convertLinear(cat,v,from,to){ var u=UNITS[cat]; return v*u[from]/u[to]; }
+function convertTemp(v,from,to){
+  var c; if(from==="°C") c=v; else if(from==="°F") c=(v-32)*5/9; else c=v-273.15;
+  if(to==="°C") return c; if(to==="°F") return c*9/5+32; return c+273.15;
+}
+var DIST={m:1,km:1000,mi:1609.344,ft:0.3048,yd:0.9144};
+var TIMEU={s:1,min:60,h:3600};
+var SPEEDU={"m/s":1,"km/h":1000/3600,mph:1609.344/3600,"ft/s":0.3048,knot:1852/3600};
+
+/* ---------- DOM helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function el(tag,attrs,txt){ var e=document.createElement(tag); if(attrs) for(var k in attrs) e.setAttribute(k,attrs[k]); if(txt!=null) e.textContent=txt; return e; }
+function fillSelect(sel,arr,selected){
+  sel.innerHTML="";
+  arr.forEach(function(o){ var op=el("option",{value:o},o); if(o===selected) op.selected=true; sel.appendChild(op); });
+}
+
+/* ======================= MODE SWITCHER ======================= */
+var MODES=[
+  {id:"basic", name:"Arithmetic", icon:'<path d="M5 7h6M8 4v6M14 6h5M14 9h5M5 16l4 4M9 16l-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'},
+  {id:"sci",   name:"Scientific", icon:'<path d="M4 19c4-10 12-10 16 0M9 5l6 3-6 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'},
+  {id:"emi",   name:"Loan EMI", icon:'<rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.2" stroke="currentColor" stroke-width="1.6"/>'},
+  {id:"ci",    name:"Compound interest", icon:'<path d="M4 18C8 18 9 7 20 6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M15.5 6H20v4.5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'},
+  {id:"bmi",   name:"BMI", icon:'<circle cx="12" cy="6" r="2.4" stroke="currentColor" stroke-width="1.6"/><path d="M12 9v7m0-7l-4 2m4-2l4 2M9 20l3-4 3 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>'},
+  {id:"metric",name:"Converter", icon:'<path d="M7 4l-3 3 3 3M4 7h13M17 20l3-3-3-3M20 17H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'},
+  {id:"age",   name:"Age", icon:'<rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'},
+  {id:"speed", name:"Speed", icon:'<path d="M12 13l5-5M3 13a9 9 0 0118 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/><circle cx="12" cy="13" r="1.4" fill="currentColor"/>'}
+];
+var modesNav=$("modes");
+MODES.forEach(function(m,idx){
+  var b=el("button",{class:"mode",role:"tab",id:"tab-"+m.id,"aria-controls":"panel-"+m.id,"aria-selected":idx===0?"true":"false",tabindex:idx===0?"0":"-1"});
+  b.innerHTML='<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none">'+m.icon+'</svg></span>'+m.name;
+  b.addEventListener("click",function(){ selectMode(m.id); });
+  modesNav.appendChild(b);
+});
+function selectMode(id){
+  MODES.forEach(function(m){
+    var sel=m.id===id;
+    var tab=$("tab-"+m.id), pan=$("panel-"+m.id);
+    tab.setAttribute("aria-selected",sel?"true":"false");
+    tab.tabIndex=sel?0:-1;
+    pan.hidden=!sel;
+  });
+  activeMode=id;
+}
+var activeMode="basic";
+/* keyboard roving on the tablist */
+modesNav.addEventListener("keydown",function(e){
+  if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft") return;
+  var i=MODES.findIndex(function(m){return m.id===activeMode;});
+  i=(e.key==="ArrowRight")?(i+1)%MODES.length:(i-1+MODES.length)%MODES.length;
+  selectMode(MODES[i].id); $("tab-"+MODES[i].id).focus();
+});
+
+/* ======================= BASIC / SCIENTIFIC ENGINE ======================= */
+function makeEngine(opts){
+  var expr="", justEval=false, lastShown="0";
+  function render(){
+    opts.sub.textContent=expr;
+    if(expr===""){ opts.main.textContent="0"; lastShown="0"; return; }
+    var val=null;
+    try{ val=evaluate(expr,opts.isDeg()); }catch(e){ val=null; }
+    if(val===null||Number.isNaN(val)){ opts.main.textContent=lastShown; }
+    else { lastShown=fmt(val); opts.main.textContent=lastShown; }
+  }
+  function token(s){
+    if(justEval){
+      if(/^[0-9.]$/.test(s) || /^[a-z√π(]/i.test(s)){ expr=""; }
+      justEval=false;
+    }
+    expr+=s; render();
+  }
+  function operator(op){
+    if(justEval){ justEval=false; }                 // continue from result already in expr
+    if(/[+\-×÷^%]\s*$/.test(expr) && op!=="−"){      // replace trailing operator (allow leading minus)
+      expr=expr.replace(/[+\-×÷^%]\s*$/,"");
+    }
+    if(expr==="" && op!=="−") return;                // don't start with an operator (except minus)
+    expr+=op; render();
+  }
+  function clearAll(){ expr=""; justEval=false; render(); }
+  function back(){ if(justEval){ return; } expr=expr.replace(/\s*(mod|.)$/,""); render(); }
+  function equals(){
+    if(expr==="") return;
+    var val;
+    try{ val=evaluate(expr,opts.isDeg()); }catch(e){ opts.main.textContent="Error"; return; }
+    if(val===null||Number.isNaN(val)||!isFinite(val)){ opts.main.textContent=fmt(val); expr=""; justEval=true; return; }
+    opts.sub.textContent=expr+" =";
+    var shown=fmt(val); opts.main.textContent=shown; lastShown=shown;
+    expr=numToExpr(val); justEval=true;
+  }
+  function plusminus(){
+    // negate the whole current expression value
+    var val; try{ val=evaluate(expr||"0",opts.isDeg()); }catch(e){ return; }
+    if(val===null) return; expr=numToExpr(-val); justEval=false; render();
+  }
+  return {token:token,operator:operator,clearAll:clearAll,back:back,equals:equals,plusminus:plusminus,refresh:render};
+}
+
+function handleKey(k,eng){
+  switch(k.action){
+    case "clear": eng.clearAll(); return;
+    case "back": eng.back(); return;
+    case "equals": eng.equals(); return;
+    case "pm": eng.plusminus(); return;
+    case "deg": return; /* angle toggle handled in afterClick */
+  }
+  if(k.op) eng.operator(k.token);
+  else if(k.token!=null) eng.token(k.token);
+}
+function renderKeys(container,layout,eng){
+  container.innerHTML="";
+  layout.forEach(function(k){
+    var b=el("button",{type:"button",class:"key "+(k.cls||""),"aria-label":k.aria||k.label});
+    b.innerHTML=k.html||k.label;
+    if(k.span) b.style.gridColumn="span "+k.span;
+    if(k.id) b.id=k.id;
+    b.addEventListener("click",function(){ handleKey(k,eng); if(k.afterClick) k.afterClick(b); });
+    container.appendChild(b);
+  });
+}
+
+/* basic layout */
+var basicEngine=makeEngine({sub:$("basic-sub"),main:$("basic-main"),isDeg:function(){return false;}});
+var BASIC=[
+  {label:"C",action:"clear",cls:"danger"},
+  {label:"⌫",action:"back",cls:"fn",aria:"Backspace"},
+  {label:"±",action:"pm",cls:"fn",aria:"Plus minus"},
+  {label:"÷",token:"÷",op:true,cls:"op"},
+  {label:"7",token:"7"},{label:"8",token:"8"},{label:"9",token:"9"},{label:"×",token:"×",op:true,cls:"op"},
+  {label:"4",token:"4"},{label:"5",token:"5"},{label:"6",token:"6"},{label:"−",token:"−",op:true,cls:"op"},
+  {label:"1",token:"1"},{label:"2",token:"2"},{label:"3",token:"3"},{label:"+",token:"+",op:true,cls:"op"},
+  {label:"0",token:"0",span:2},{label:".",token:"."},{label:"=",action:"equals",cls:"accent"}
+];
+renderKeys($("basic-keys"),BASIC,basicEngine);
+
+/* scientific layout */
+var sciDeg=true;
+function isDeg(){ return sciDeg; }
+var sciEngine=makeEngine({sub:$("sci-sub"),main:$("sci-main"),isDeg:isDeg});
+function toggleDeg(){ sciDeg=!sciDeg; $("sci-angle").textContent=sciDeg?"DEG":"RAD"; }
+var SCI=[
+  {label:"DEG",cls:"toggle",id:"sci-degbtn",aria:"Toggle degrees or radians",action:"deg",
+   html:"DEG", afterClick:function(b){ toggleDeg(); b.textContent=sciDeg?"DEG":"RAD"; sciEngine.refresh(); }},
+  {label:"C",action:"clear",cls:"danger"},
+  {label:"⌫",action:"back",cls:"fn",aria:"Backspace"},
+  {label:"(",token:"(",cls:"fn"},{label:")",token:")",cls:"fn"},
+  {label:"sin",token:"sin(",cls:"fn"},{label:"cos",token:"cos(",cls:"fn"},{label:"tan",token:"tan(",cls:"fn"},
+  {label:"xʸ",token:"^",cls:"fn",aria:"power"},{label:"√",token:"√(",cls:"fn",aria:"square root"},
+  {label:"ln",token:"ln(",cls:"fn"},{label:"log",token:"log(",cls:"fn"},
+  {label:"π",token:"π",cls:"fn"},{label:"e",token:"e",cls:"fn"},{label:"x!",token:"!",cls:"fn",aria:"factorial"},
+  {label:"7",token:"7"},{label:"8",token:"8"},{label:"9",token:"9"},{label:"×",token:"×",op:true,cls:"op"},{label:"÷",token:"÷",op:true,cls:"op"},
+  {label:"4",token:"4"},{label:"5",token:"5"},{label:"6",token:"6"},{label:"−",token:"−",op:true,cls:"op"},{label:"+",token:"+",op:true,cls:"op"},
+  {label:"1",token:"1"},{label:"2",token:"2"},{label:"3",token:"3"},{label:"x²",token:"^2",cls:"fn"},{label:"x⁻¹",token:"^-1",cls:"fn",aria:"reciprocal"},
+  {label:"±",action:"pm",cls:"fn"},{label:"0",token:"0"},{label:".",token:"."},{label:"mod",token:" mod ",op:true,cls:"fn"},{label:"=",action:"equals",cls:"accent"}
+];
+renderKeys($("sci-keys"),SCI,sciEngine);
+
+/* keyboard input for basic + scientific */
+document.addEventListener("keydown",function(e){
+  var eng = activeMode==="basic"?basicEngine : activeMode==="sci"?sciEngine : null;
+  if(!eng) return;
+  var tag=(e.target&&e.target.tagName)||"";
+  if(tag==="INPUT"||tag==="SELECT"||tag==="TEXTAREA") return;
+  var k=e.key;
+  if(/[0-9.]/.test(k)){ eng.token(k); }
+  else if(k==="+"){ eng.operator("+"); }
+  else if(k==="-"){ eng.operator("−"); }
+  else if(k==="*"||k==="x"||k==="X"){ eng.operator("×"); }
+  else if(k==="/"){ eng.operator("÷"); }
+  else if(k==="^"){ eng.token("^"); }
+  else if(k==="%"){ eng.token(" mod "); }
+  else if(k==="("||k===")"){ eng.token(k); }
+  else if(k==="Enter"||k==="="){ e.preventDefault(); eng.equals(); }
+  else if(k==="Backspace"){ eng.back(); }
+  else if(k==="Escape"){ eng.clearAll(); }
+  else return;
+  e.preventDefault();
+});
+
+/* ======================= EMI ======================= */
+function calcEMI(){
+  var cur=$("emi-cur").value;
+  var P=parseFloat($("emi-amount").value);
+  var rate=parseFloat($("emi-rate").value);
+  var ten=parseFloat($("emi-tenure").value);
+  var unit=$("emi-tenure-unit").value;
+  var months = unit==="years"? ten*12 : ten;
+  var extra=$("emi-extra");
+  if(!(P>0)||isNaN(rate)||rate<0||!(months>0)){ $("emi-main").textContent="—"; extra.hidden=true; $("emi-term").textContent=""; return; }
+  var r=rate/12/100;
+  var e = r===0 ? P/months : (P*r*Math.pow(1+r,months))/(Math.pow(1+r,months)-1);
+  var total=e*months, interest=total-P;
+  var money=function(v,d){ return cur+" "+fmtFixed(v,d); };
+  $("emi-main").textContent=money(e,2);
+  $("emi-term").textContent=Math.round(months)+" mo";
+  $("emi-principal").textContent=money(P,0);
+  $("emi-interest").textContent=money(interest,0);
+  $("emi-total").textContent=money(total,0);
+  var pPct=Math.max(0,Math.min(100,(P/total)*100));
+  $("emi-bar-p").style.width=pPct+"%";
+  $("emi-bar-i").style.width=(100-pPct)+"%";
+  extra.hidden=false;
+}
+["emi-amount","emi-rate","emi-tenure"].forEach(function(id){ $(id).addEventListener("input",calcEMI); });
+["emi-cur","emi-tenure-unit"].forEach(function(id){ $(id).addEventListener("change",calcEMI); });
+
+/* ======================= COMPOUND INTEREST ======================= */
+var CI_FREQ_LABEL={1:"per year",2:"per half-year",4:"per quarter",12:"per month",365:"per day"};
+function calcCI(){
+  var cur=$("ci-cur").value;
+  var P=parseFloat($("ci-principal").value); if(isNaN(P)) P=0;
+  var rate=parseFloat($("ci-rate").value);
+  var years=parseFloat($("ci-years").value);
+  var n=parseFloat($("ci-freq").value);
+  var pmt=parseFloat($("ci-contrib").value); if(isNaN(pmt)) pmt=0;
+  var extra=$("ci-extra");
+  var fl=CI_FREQ_LABEL[n]||"";
+  $("ci-contrib-hint").textContent = pmt>0 ? ("Added "+fl+" ("+n+"×/year)") : "Added each compounding period.";
+  if(isNaN(rate)||rate<0||!(years>0)||!(n>0)||(P<=0&&pmt<=0)){
+    $("ci-main").textContent="—"; extra.hidden=true; $("ci-freq-tag").textContent=""; return;
+  }
+  var i=rate/100/n, N=n*years;
+  var aPrin=P*Math.pow(1+i,N);
+  var aCont=i===0 ? pmt*N : pmt*((Math.pow(1+i,N)-1)/i);
+  var total=aPrin+aCont, invested=P+pmt*N, interest=total-invested;
+  var money=function(v,d){ return cur+" "+fmtFixed(v,d); };
+  $("ci-main").textContent=money(total,2);
+  $("ci-freq-tag").textContent=n+"×/yr";
+  $("ci-invested").textContent=money(invested,0);
+  $("ci-interest").textContent=money(interest,0);
+  $("ci-maturity").textContent=money(total,0);
+  var pPct = total>0 ? Math.max(0,Math.min(100,(invested/total)*100)) : 100;
+  $("ci-bar-p").style.width=pPct+"%";
+  $("ci-bar-i").style.width=(100-pPct)+"%";
+  extra.hidden=false;
+}
+["ci-principal","ci-rate","ci-years","ci-contrib"].forEach(function(id){ $(id).addEventListener("input",calcCI); });
+["ci-cur","ci-freq"].forEach(function(id){ $(id).addEventListener("change",calcCI); });
+
+/* ======================= BMI ======================= */
+var bmiUnit="metric";
+$("bmi-units").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  bmiUnit=b.dataset.unit;
+  Array.prototype.forEach.call(this.children,function(x){ x.setAttribute("aria-pressed", x===b?"true":"false"); });
+  $("bmi-metric-fields").hidden = bmiUnit!=="metric";
+  $("bmi-imperial-fields").hidden = bmiUnit!=="imperial";
+  calcBMI();
+});
+function calcBMI(){
+  var b=null;
+  if(bmiUnit==="metric"){
+    var kg=parseFloat($("bmi-kg").value), cm=parseFloat($("bmi-cm").value);
+    if(kg>0&&cm>0){ var m=cm/100; b=kg/(m*m); }
+  } else {
+    var lb=parseFloat($("bmi-lb").value), ft=parseFloat($("bmi-ft").value)||0, inch=parseFloat($("bmi-in").value)||0;
+    var ti=ft*12+inch; if(lb>0&&ti>0) b=703*lb/(ti*ti);
+  }
+  var extra=$("bmi-extra");
+  if(b===null||!isFinite(b)){ $("bmi-main").textContent="—"; $("bmi-cat-tag").textContent=""; extra.hidden=true; return; }
+  var cat = b<18.5?"Underweight": b<25?"Normal": b<30?"Overweight":"Obese";
+  $("bmi-main").textContent=fmtFixed(b,1);
+  $("bmi-cat-tag").textContent=cat;
+  var pos=Math.max(0,Math.min(100,(b-15)/(40-15)*100));
+  $("bmi-needle").style.left=pos+"%";
+  extra.hidden=false;
+}
+["bmi-kg","bmi-cm","bmi-lb","bmi-ft","bmi-in"].forEach(function(id){ $(id).addEventListener("input",calcBMI); });
+
+/* ======================= CONVERTER ======================= */
+function unitsFor(cat){ return cat==="temp"? TEMP_UNITS : Object.keys(UNITS[cat]); }
+function populateConv(){
+  var cat=$("conv-cat").value||"length";
+  var list=unitsFor(cat);
+  var from=list[0], to=list[1]||list[0];
+  fillSelect($("conv-from"),list,from);
+  fillSelect($("conv-to"),list,to);
+  $("conv-cat-tag").textContent=cat==="temp"?"temperature":cat;
+  calcConv();
+}
+function calcConv(){
+  var cat=$("conv-cat").value;
+  var v=parseFloat($("conv-value").value);
+  var from=$("conv-from").value, to=$("conv-to").value;
+  if(isNaN(v)){ $("conv-main").textContent="—"; $("conv-sub").textContent="—"; return; }
+  var out = cat==="temp"? convertTemp(v,from,to) : convertLinear(cat,v,from,to);
+  $("conv-sub").textContent=fmt(v)+" "+from+"  =";
+  $("conv-main").innerHTML=fmt(out)+'<span class="unit">'+to+'</span>';
+}
+$("conv-cat").addEventListener("change",populateConv);
+$("conv-value").addEventListener("input",calcConv);
+$("conv-from").addEventListener("change",calcConv);
+$("conv-to").addEventListener("change",calcConv);
+$("conv-swap").addEventListener("click",function(){
+  var f=$("conv-from"), t=$("conv-to"); var tmp=f.value; f.value=t.value; t.value=tmp; calcConv();
+});
+
+/* ======================= AGE ======================= */
+function todayStr(){ var d=new Date(); var mm=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return d.getFullYear()+"-"+mm+"-"+dd; }
+$("age-as").value=todayStr();
+$("age-today").addEventListener("click",function(){ $("age-as").value=todayStr(); calcAge(); });
+function calcAge(){
+  var dobStr=$("age-dob").value, asStr=$("age-as").value;
+  var err=$("age-err"), extra=$("age-extra");
+  if(!dobStr||!asStr){ $("age-main").textContent="—"; err.textContent=""; extra.hidden=true; $("age-born").textContent=""; return; }
+  var dob=new Date(dobStr+"T00:00:00"), end=new Date(asStr+"T00:00:00");
+  if(end<dob){ $("age-main").textContent="—"; extra.hidden=true; $("age-born").textContent=""; err.textContent="The “age at” date is before the birth date."; return; }
+  err.textContent="";
+  var y=end.getFullYear()-dob.getFullYear(), m=end.getMonth()-dob.getMonth(), d=end.getDate()-dob.getDate();
+  if(d<0){ m--; d+=new Date(end.getFullYear(),end.getMonth(),0).getDate(); }
+  if(m<0){ y--; m+=12; }
+  var MS=86400000, totalDays=Math.floor((end-dob)/MS);
+  var next=new Date(end.getFullYear(),dob.getMonth(),dob.getDate());
+  if(next<end) next=new Date(end.getFullYear()+1,dob.getMonth(),dob.getDate());
+  var toB=Math.round((next-end)/MS);
+  $("age-main").innerHTML=y+'<span class="unit">y</span> '+m+'<span class="unit">m</span> '+d+'<span class="unit">d</span>';
+  $("age-born").textContent=dob.toLocaleDateString("en-US",{weekday:"long"});
+  $("age-months").textContent=(y*12+m).toLocaleString("en-US");
+  $("age-weeks").textContent=Math.floor(totalDays/7).toLocaleString("en-US");
+  $("age-days").textContent=totalDays.toLocaleString("en-US");
+  $("age-hours").textContent=(totalDays*24).toLocaleString("en-US");
+  $("age-next").textContent= toB===0?"Today! 🎂":(toB+" days");
+  extra.hidden=false;
+}
+["age-dob","age-as"].forEach(function(id){ $(id).addEventListener("input",calcAge); });
+
+/* ======================= SPEED ======================= */
+var solveFor="speed";
+fillSelect($("sp-dist-u"),Object.keys(DIST),"km");
+fillSelect($("sp-time-u"),Object.keys(TIMEU),"h");
+fillSelect($("sp-speed-u"),Object.keys(SPEEDU),"km/h");
+function refreshSpeedOut(){
+  if(solveFor==="speed") fillSelect($("sp-out"),Object.keys(SPEEDU),"km/h");
+  else if(solveFor==="distance") fillSelect($("sp-out"),Object.keys(DIST),"km");
+  else fillSelect($("sp-out"),Object.keys(TIMEU),"h");
+}
+$("speed-mode").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  solveFor=b.dataset.solve;
+  Array.prototype.forEach.call(this.children,function(x){ x.setAttribute("aria-pressed", x===b?"true":"false"); });
+  $("sp-field-dist").hidden = (solveFor==="distance");
+  $("sp-field-time").hidden = (solveFor==="time");
+  $("sp-field-speed").hidden = (solveFor==="speed");
+  refreshSpeedOut(); calcSpeed();
+});
+function calcSpeed(){
+  var out=$("sp-out").value, res=null, label="";
+  try{
+    if(solveFor==="speed"){
+      var d=parseFloat($("sp-dist").value), du=$("sp-dist-u").value, t=parseFloat($("sp-time").value), tu=$("sp-time-u").value;
+      if(d>0&&t>0){ res=(d*DIST[du])/(t*TIMEU[tu])/SPEEDU[out]; label=fmt(d)+" "+du+" in "+fmt(t)+" "+tu; }
+      $("speed-solving").textContent="→ speed";
+    } else if(solveFor==="distance"){
+      var v=parseFloat($("sp-speed").value), su=$("sp-speed-u").value, t2=parseFloat($("sp-time").value), tu2=$("sp-time-u").value;
+      if(v>0&&t2>0){ res=v*SPEEDU[su]*(t2*TIMEU[tu2])/DIST[out]; label=fmt(v)+" "+su+" for "+fmt(t2)+" "+tu2; }
+      $("speed-solving").textContent="→ distance";
+    } else {
+      var v2=parseFloat($("sp-speed").value), su2=$("sp-speed-u").value, d2=parseFloat($("sp-dist").value), du2=$("sp-dist-u").value;
+      if(v2>0&&d2>0){ res=(d2*DIST[du2])/(v2*SPEEDU[su2])/TIMEU[out]; label=fmt(d2)+" "+du2+" at "+fmt(v2)+" "+su2; }
+      $("speed-solving").textContent="→ time";
+    }
+  }catch(e){ res=null; }
+  if(res===null||!isFinite(res)){ $("speed-main").textContent="—"; $("speed-sub").textContent="—"; return; }
+  $("speed-sub").textContent=label+"  =";
+  $("speed-main").innerHTML=fmt(res)+'<span class="unit">'+out+'</span>';
+}
+["sp-dist","sp-time","sp-speed"].forEach(function(id){ $(id).addEventListener("input",calcSpeed); });
+["sp-dist-u","sp-time-u","sp-speed-u","sp-out"].forEach(function(id){ $(id).addEventListener("change",calcSpeed); });
+
+/* ======================= INIT ======================= */
+populateConv();
+refreshSpeedOut();
+calcEMI(); calcCI(); calcBMI(); calcAge(); calcSpeed();
+
+/* power-on flicker on the active screen */
+(function(){
+  if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var screens=document.querySelectorAll(".screen-main");
+  screens.forEach(function(s){
+    s.animate(
+      [{opacity:0.15},{opacity:1,offset:0.3},{opacity:0.4,offset:0.45},{opacity:1}],
+      {duration:650, easing:"ease-out"}
+    );
+  });
+})();
+
+})();
+</script>
+</body>
+</html>
