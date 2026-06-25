@@ -1,4 +1,4 @@
-# Calcify
+# Arithmos
 
 A single-page desk of calculators — Arithmetic, Scientific, Loan EMI, Compound Interest, BMI, Unit Converter, Age, and Speed. Pure HTML/CSS/JS in one file, no build step and no dependencies (other than Google Fonts loaded over CDN).
 
